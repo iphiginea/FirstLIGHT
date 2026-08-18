@@ -231,7 +231,7 @@
   body.focus .chorus,
   body.focus .keys,
   body.focus footer,
-  body.focus .controls button:not(#btn-focus){
+  body.focus .controls button:not(#btn-focus-hint){
     opacity:0;
     pointer-events:none;
     height:0;
@@ -241,6 +241,20 @@
   }
   body.focus .controls{ margin-top:0; }
   body.focus h1{ opacity:.8; transition: opacity .6s ease; }
+  .focus-hint{
+    position:fixed;
+    bottom:5vh; left:0; right:0;
+    text-align:center;
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:.75rem;
+    color:var(--mist);
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 1s ease;
+    z-index:2;
+  }
+  body.focus .focus-hint{ opacity:.28; }
 
   /* ---------- Postcard ---------- */
   .postcard{
@@ -268,12 +282,26 @@
   }
   .stamp{
     position:absolute; top:1.1rem; right:1.1rem;
-    width:52px; height:52px;
-    border:2px dashed color-mix(in srgb, var(--ink) 40%, transparent);
-    border-radius:4px;
+    width:52px; height:64px;
+    border:3px dotted color-mix(in srgb, var(--ink) 45%, transparent);
+    border-radius:2px;
     display:flex; align-items:center; justify-content:center;
-    color:color-mix(in srgb, var(--ink) 55%, transparent);
+    overflow:hidden;
+    background:var(--mist);
     transform:rotate(6deg);
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  .stamp img{
+    width:100%; height:100%;
+    object-fit:cover;
+  }
+  .stamp.stamp-fallback{
+    color:color-mix(in srgb, var(--ink) 55%, transparent);
+  }
+  .stamp.stamp-fallback img{ display:none; }
+  .stamp.stamp-fallback::after{
+    content:'✦';
+    font-size:1.1rem;
   }
   .postcard-eyebrow{
     font-family:'IBM Plex Mono', monospace;
@@ -380,10 +408,7 @@
     <div class="postcard-inner">
       <button class="postcard-close" id="btn-postcard-close" aria-label="Close postcard">&times;</button>
       <div class="stamp" aria-hidden="true">
-        <svg viewBox="0 0 40 40" width="34" height="34">
-          <path d="M20 8c-4 0-6 3-6 6 0 5 6 10 6 10s6-5 6-10c0-3-2-6-6-6z" fill="none" stroke="currentColor" stroke-width="1.4"/>
-          <path d="M6 26c4-3 9-4 14-4s10 1 14 4" fill="none" stroke="currentColor" stroke-width="1.2"/>
-        </svg>
+        <img src="stamp.png" alt="" onerror="this.parentElement.classList.add('stamp-fallback')">
       </div>
       <p class="postcard-eyebrow">Wish you could hear this</p>
       <h2 class="postcard-place" id="postcard-place">—</h2>
@@ -399,6 +424,8 @@
 
   <footer>Bird sightings via eBird · recordings via Xeno-canto contributors</footer>
 </div>
+
+<p class="focus-hint" id="focus-hint">tap anywhere to return</p>
 
 <script>
 // ---------- Ambient stars ----------
@@ -484,7 +511,19 @@ document.getElementById('btn-place').addEventListener('click', async () => {
 
 document.getElementById('btn-replay').addEventListener('click', () => playChorus(currentSpecies));
 document.getElementById('btn-shuffle').addEventListener('click', () => startChorus(currentCoords.lat, currentCoords.lng));
-document.getElementById('btn-focus').addEventListener('click', () => document.body.classList.toggle('focus'));
+document.getElementById('btn-focus').addEventListener('click', () => enterFocusMode());
+
+function enterFocusMode(){
+  document.body.classList.add('focus');
+}
+function exitFocusMode(){
+  document.body.classList.remove('focus');
+}
+document.body.addEventListener('click', (e) => {
+  if(document.body.classList.contains('focus') && e.target.id !== 'btn-focus'){
+    exitFocusMode();
+  }
+});
 document.getElementById('btn-postcard').addEventListener('click', openPostcard);
 document.getElementById('btn-postcard-close').addEventListener('click', () => document.getElementById('postcard').classList.add('hidden'));
 document.getElementById('btn-share').addEventListener('click', shareChorus);
