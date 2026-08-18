@@ -232,7 +232,7 @@
         <p class="keys-hint">
           Free keys — eBird: <a href="https://ebird.org/api/keygen" target="_blank" rel="noopener">ebird.org/api/keygen</a>.
           Xeno-canto: register at <a href="https://xeno-canto.org" target="_blank" rel="noopener">xeno-canto.org</a>, key is on your account page.
-          Kept only in this browser tab — nothing is sent anywhere but eBird and Xeno-canto.
+          Kept only in this browser, on this device — nothing is sent anywhere but eBird and Xeno-canto.
         </p>
       </div>
     </details>
@@ -275,6 +275,12 @@ const controlsEl = document.getElementById('controls');
 const stageLocationEl = document.getElementById('stage-location');
 const keyEbird = document.getElementById('key-ebird');
 const keyXC = document.getElementById('key-xc');
+
+// ---------- Remember API keys on this device ----------
+keyEbird.value = localStorage.getItem('firstlight_ebird_key') || '';
+keyXC.value = localStorage.getItem('firstlight_xc_key') || '';
+keyEbird.addEventListener('input', () => localStorage.setItem('firstlight_ebird_key', keyEbird.value.trim()));
+keyXC.addEventListener('input', () => localStorage.setItem('firstlight_xc_key', keyXC.value.trim()));
 
 function setSkyProgress(v){
   document.documentElement.style.setProperty('--sky-progress', String(v));
