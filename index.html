@@ -351,7 +351,7 @@ async function startChorus(lat, lng){
     const withAudio = await attachRecordings(picked, xcKey);
     const usable = withAudio.filter(b => b.audioUrl);
     if(usable.length < 3){
-      setStatus('Couldn\'t find enough recordings for this area — try again.');
+      setStatus(withAudio._firstIssue || 'Couldn\'t find enough recordings for this area — try again.');
       return;
     }
     currentSpecies = usable;
@@ -362,7 +362,7 @@ async function startChorus(lat, lng){
     await playChorus(usable);
   }catch(err){
     console.error(err);
-    setStatus('Something went wrong reaching eBird or Xeno-canto — check your keys and connection.');
+    setStatus('Error: ' + (err && err.message ? err.message : String(err)));
   }
 }
 
@@ -396,19 +396,31 @@ function pickFive(species){
 
 async function attachRecordings(species, xcKey){
   const results = [];
+  let firstIssue = null;
   for(const bird of species){
     try{
-      const q = encodeURIComponent(`sp:"${bird.sciName}" q:A,B`);
-      const url = `https://xeno-canto.org/api/3/recordings?query=${q}&key=${xcKey}&per_page=5`;
+      const q = encodeURIComponent(`sp:"${bird.sciName}"`);
+      const url = `https://xeno-canto.org/api/3/recordings?query=${q}&key=${xcKey}&per_page=10`;
       const res = await fetch(url);
-      if(!res.ok) throw new Error('xc ' + res.status);
+      if(!res.ok){
+        const bodyText = await res.text();
+        console.error('Xeno-canto HTTP error for', bird.sciName, res.status, bodyText);
+        if(!firstIssue) firstIssue = `Xeno-canto returned ${res.status} for ${bird.sciName}: ${bodyText.slice(0,120)}`;
+        results.push({ ...bird, audioUrl: null });
+        continue;
+      }
       const data = await res.json();
-      const rec = (data.recordings || [])[0];
+      const recs = data.recordings || [];
+      const rec = recs.find(r => r.q === 'A') || recs.find(r => r.q === 'B') || recs[0];
+      if(!rec && !firstIssue) firstIssue = `No recordings found for ${bird.sciName} (${bird.comName})`;
       results.push({ ...bird, audioUrl: rec ? rec.file : null });
     }catch(e){
+      console.error('Xeno-canto fetch failed for', bird.sciName, e);
+      if(!firstIssue) firstIssue = `Couldn't reach Xeno-canto for ${bird.sciName} — likely a CORS block: ${e.message}`;
       results.push({ ...bird, audioUrl: null });
     }
   }
+  results._firstIssue = firstIssue;
   return results;
 }
 
