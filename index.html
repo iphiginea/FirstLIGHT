@@ -151,6 +151,7 @@
   .bird-card{
     display:flex;
     align-items:center;
+    justify-content:space-between;
     gap:1rem;
     padding:.9rem 1.3rem;
     border-radius:14px;
@@ -161,6 +162,24 @@
     transition: opacity .8s ease, transform .8s ease, background .3s ease;
     text-align:left;
   }
+  .bird-card-info{ display:flex; align-items:center; gap:1rem; min-width:0; }
+  .bird-card.muted{ opacity:.55 !important; }
+  .mute-btn{
+    flex-shrink:0;
+    width:34px; height:34px;
+    border-radius:50%;
+    border:1px solid color-mix(in srgb, var(--mist) 25%, transparent);
+    background:transparent;
+    color:var(--mist);
+    padding:0;
+    font-size:1rem;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .mute-btn:hover{ border-color:var(--gold); }
+  .bird-card.muted .mute-btn{ color:var(--feather); border-color:color-mix(in srgb, var(--feather) 40%, transparent); }
   .bird-card.active{
     opacity:1;
     transform:translateY(0);
@@ -268,6 +287,8 @@ let audioCtx = null;
 let activeSources = [];
 let currentSpecies = [];
 let currentCoords = null;
+let gainNodes = {};
+let mutedBirds = new Set();
 
 const statusEl = document.getElementById('status');
 const chorusEl = document.getElementById('chorus');
@@ -334,6 +355,7 @@ async function startChorus(lat, lng){
 
   currentCoords = { lat, lng };
   stopAll();
+  mutedBirds = new Set();
   chorusEl.innerHTML = '';
   chorusEl.style.display = 'flex';
   controlsEl.classList.add('hidden');
@@ -432,14 +454,38 @@ function renderCards(birds){
     card.className = 'bird-card';
     card.id = 'card-' + bird.speciesCode;
     card.innerHTML = `
-      <span class="pulse"></span>
-      <span>
-        <span class="bird-name">${bird.comName}</span>
-        <span class="bird-sci">${bird.sciName}</span>
+      <span class="bird-card-info">
+        <span class="pulse"></span>
+        <span>
+          <span class="bird-name">${bird.comName}</span>
+          <span class="bird-sci">${bird.sciName}</span>
+        </span>
       </span>
+      <button class="mute-btn" data-code="${bird.speciesCode}" aria-label="Mute ${bird.comName}" title="Mute ${bird.comName}">♪</button>
     `;
     chorusEl.appendChild(card);
   });
+  chorusEl.querySelectorAll('.mute-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleMute(btn.dataset.code));
+  });
+}
+
+function toggleMute(code){
+  const card = document.getElementById('card-' + code);
+  const btn = card ? card.querySelector('.mute-btn') : null;
+  if(mutedBirds.has(code)){
+    mutedBirds.delete(code);
+    if(card) card.classList.remove('muted');
+    if(btn){ btn.textContent = '♪'; btn.setAttribute('aria-label','Mute'); }
+  }else{
+    mutedBirds.add(code);
+    if(card) card.classList.add('muted');
+    if(btn){ btn.textContent = '×'; btn.setAttribute('aria-label','Unmute'); }
+  }
+  const g = gainNodes[code];
+  if(g && audioCtx){
+    g.gain.linearRampToValueAtTime(mutedBirds.has(code) ? 0 : g._baseValue, audioCtx.currentTime + 0.15);
+  }
 }
 
 // ---------- Audio ----------
@@ -453,14 +499,13 @@ function stopAll(){
 async function playChorus(birds){
   stopAll();
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let loaded = 0;
+  gainNodes = {};
 
   const buffers = await Promise.all(birds.map(async bird => {
     try{
       const res = await fetch(bird.audioUrl);
       const arr = await res.arrayBuffer();
       const buf = await audioCtx.decodeAudioData(arr);
-      loaded++;
       return buf;
     }catch(e){
       return null;
@@ -475,14 +520,20 @@ async function playChorus(birds){
     source.buffer = buf;
     source.loop = true;
     const gain = audioCtx.createGain();
-    gain.gain.value = 0.7 / Math.sqrt(birds.length);
+    const baseValue = 0.7 / Math.sqrt(birds.length);
+    gain._baseValue = baseValue;
+    gain.gain.value = mutedBirds.has(bird.speciesCode) ? 0 : baseValue;
+    gainNodes[bird.speciesCode] = gain;
     source.connect(gain).connect(audioCtx.destination);
     source.start(audioCtx.currentTime + delay);
     activeSources.push(source);
 
     setTimeout(() => {
       const card = document.getElementById('card-' + bird.speciesCode);
-      if(card) card.classList.add('active');
+      if(card){
+        card.classList.add('active');
+        if(mutedBirds.has(bird.speciesCode)) card.classList.add('muted');
+      }
       const activeCount = document.querySelectorAll('.bird-card.active').length;
       setSkyProgress(activeCount / birds.length);
     }, delay * 1000);
