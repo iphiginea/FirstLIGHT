@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>First Light</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&family=Public+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2140;
+    --plum:#4A3B63;
+    --ember:#E8935F;
+    --mist:#F0E6D8;
+    --feather:#8FA3A0;
+    --gold:#F2C879;
+    --sky-progress: 0;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:'Public Sans', sans-serif;
+    color:var(--mist);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:6vh 6vw;
+    overflow-x:hidden;
+    background: linear-gradient(180deg,
+      var(--ink) 0%,
+      color-mix(in srgb, var(--ink) calc(100% - (var(--sky-progress) * 60%)), var(--plum) calc(var(--sky-progress) * 60%)) 45%,
+      color-mix(in srgb, var(--plum) calc(100% - (var(--sky-progress) * 80%)), var(--ember) calc(var(--sky-progress) * 80%)) 75%,
+      color-mix(in srgb, var(--ember) calc(100% - (var(--sky-progress) * 70%)), var(--gold) calc(var(--sky-progress) * 70%)) 100%
+    );
+    transition: background 1.4s ease;
+    position:relative;
+  }
+  .stars{
+    position:fixed; inset:0; pointer-events:none;
+    opacity: calc(1 - var(--sky-progress));
+    transition: opacity 1.4s ease;
+  }
+  .star{
+    position:absolute; width:2px; height:2px; background:var(--mist);
+    border-radius:50%; opacity:.5;
+    animation: twinkle 4s ease-in-out infinite;
+  }
+  @keyframes twinkle{ 0%,100%{opacity:.15;} 50%{opacity:.7;} }
+
+  .wrap{ width:100%; max-width:560px; text-align:center; position:relative; z-index:1; }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:300;
+    font-style:italic;
+    font-size:clamp(2.6rem, 8vw, 4rem);
+    letter-spacing:-0.01em;
+    margin:0 0 .3rem;
+    color:var(--mist);
+  }
+  .tagline{
+    font-size:.95rem;
+    color:var(--feather);
+    letter-spacing:.02em;
+    margin:0 0 3.5rem;
+    font-weight:300;
+  }
+
+  button{
+    font-family:'Public Sans', sans-serif;
+    background:none;
+    border:1px solid color-mix(in srgb, var(--mist) 35%, transparent);
+    color:var(--mist);
+    padding:.85rem 2rem;
+    border-radius:999px;
+    font-size:.95rem;
+    letter-spacing:.02em;
+    cursor:pointer;
+    transition: all .3s ease;
+  }
+  button:hover:not(:disabled){
+    border-color:var(--gold);
+    background:color-mix(in srgb, var(--gold) 12%, transparent);
+  }
+  button:disabled{ opacity:.4; cursor:default; }
+  button:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+
+  .status{
+    min-height:1.4em;
+    font-size:.85rem;
+    color:var(--feather);
+    letter-spacing:.02em;
+    margin-top:1.6rem;
+    font-style:italic;
+    font-family:'Fraunces', serif;
+  }
+
+  .location-form{ display:flex; flex-direction:column; gap:.9rem; align-items:center; }
+  .location-form input{
+    font-family:'Public Sans', sans-serif;
+    background:color-mix(in srgb, var(--mist) 8%, transparent);
+    border:1px solid color-mix(in srgb, var(--mist) 25%, transparent);
+    color:var(--mist);
+    padding:.8rem 1.2rem;
+    border-radius:999px;
+    font-size:.95rem;
+    width:100%;
+    max-width:320px;
+    text-align:center;
+  }
+  .location-form input::placeholder{ color:color-mix(in srgb, var(--mist) 55%, transparent); }
+  .or{ font-size:.75rem; color:var(--feather); letter-spacing:.15em; text-transform:uppercase; margin:.2rem 0; }
+
+  .keys{
+    margin-top:2.5rem;
+    padding-top:1.6rem;
+    border-top:1px solid color-mix(in srgb, var(--mist) 15%, transparent);
+    font-size:.8rem;
+    color:var(--feather);
+  }
+  .keys summary{ cursor:pointer; letter-spacing:.02em; }
+  .keys-fields{ display:flex; flex-direction:column; gap:.7rem; margin-top:1rem; align-items:center; }
+  .keys-fields input{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.8rem;
+    background:color-mix(in srgb, var(--mist) 6%, transparent);
+    border:1px solid color-mix(in srgb, var(--mist) 20%, transparent);
+    color:var(--mist);
+    padding:.6rem 1rem;
+    border-radius:8px;
+    width:100%;
+    max-width:340px;
+  }
+  .keys-hint{ font-size:.72rem; opacity:.7; max-width:340px; margin:0 auto; line-height:1.5; }
+  .keys-hint a{ color:var(--gold); }
+
+  .chorus{ display:none; flex-direction:column; gap:.9rem; margin:2.5rem 0; }
+  .bird-card{
+    display:flex;
+    align-items:center;
+    gap:1rem;
+    padding:.9rem 1.3rem;
+    border-radius:14px;
+    background:color-mix(in srgb, var(--mist) 6%, transparent);
+    border:1px solid color-mix(in srgb, var(--mist) 12%, transparent);
+    opacity:0;
+    transform:translateY(8px);
+    transition: opacity .8s ease, transform .8s ease, background .3s ease;
+    text-align:left;
+  }
+  .bird-card.active{
+    opacity:1;
+    transform:translateY(0);
+    background:color-mix(in srgb, var(--gold) 10%, transparent);
+    border-color:color-mix(in srgb, var(--gold) 30%, transparent);
+  }
+  .pulse{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--feather);
+    flex-shrink:0;
+  }
+  .bird-card.active .pulse{
+    background:var(--gold);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 color-mix(in srgb, var(--gold) 50%, transparent);} 50%{ box-shadow:0 0 0 6px transparent;} }
+  .bird-name{
+    font-family:'Fraunces', serif;
+    font-size:1.05rem;
+    color:var(--mist);
+  }
+  .bird-sci{
+    font-family:'IBM Plex Mono', monospace;
+    font-style:italic;
+    font-size:.72rem;
+    color:var(--feather);
+    display:block;
+    margin-top:.15rem;
+  }
+
+  .controls{ display:flex; gap:.8rem; justify-content:center; flex-wrap:wrap; margin-top:1rem; }
+  .controls button{ font-size:.85rem; padding:.7rem 1.5rem; }
+
+  .hidden{ display:none !important; }
+
+  footer{
+    margin-top:3rem;
+    font-size:.7rem;
+    color:color-mix(in srgb, var(--feather) 70%, transparent);
+    letter-spacing:.03em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="wrap">
+  <h1>First Light</h1>
+  <p class="tagline">five birds, wherever you are, whatever the season</p>
+
+  <div id="stage-location">
+    <div class="location-form">
+      <button id="btn-geo">Use my location</button>
+      <span class="or">or</span>
+      <input id="input-place" type="text" placeholder="City, region, or postal code">
+      <button id="btn-place">Find my chorus</button>
+    </div>
+
+    <details class="keys">
+      <summary>API keys (required once)</summary>
+      <div class="keys-fields">
+        <input id="key-ebird" type="text" placeholder="eBird API key">
+        <input id="key-xc" type="text" placeholder="Xeno-canto API key">
+        <p class="keys-hint">
+          Free keys — eBird: <a href="https://ebird.org/api/keygen" target="_blank" rel="noopener">ebird.org/api/keygen</a>.
+          Xeno-canto: register at <a href="https://xeno-canto.org" target="_blank" rel="noopener">xeno-canto.org</a>, key is on your account page.
+          Kept only in this browser tab — nothing is sent anywhere but eBird and Xeno-canto.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <p class="status" id="status" aria-live="polite"></p>
+
+  <div class="chorus" id="chorus"></div>
+
+  <div class="controls hidden" id="controls">
+    <button id="btn-replay">Replay</button>
+    <button id="btn-shuffle">New chorus, same place</button>
+    <button id="btn-reset">Change location</button>
+  </div>
+
+  <footer>Bird sightings via eBird · recordings via Xeno-canto contributors</footer>
+</div>
+
+<script>
+// ---------- Ambient stars ----------
+const starsEl = document.getElementById('stars');
+for(let i=0;i<40;i++){
+  const s = document.createElement('div');
+  s.className='star';
+  s.style.left = Math.random()*100+'vw';
+  s.style.top = Math.random()*70+'vh';
+  s.style.animationDelay = (Math.random()*4)+'s';
+  starsEl.appendChild(s);
+}
+
+// ---------- State ----------
+let audioCtx = null;
+let activeSources = [];
+let currentSpecies = [];
+let currentCoords = null;
+
+const statusEl = document.getElementById('status');
+const chorusEl = document.getElementById('chorus');
+const controlsEl = document.getElementById('controls');
+const stageLocationEl = document.getElementById('stage-location');
+const keyEbird = document.getElementById('key-ebird');
+const keyXC = document.getElementById('key-xc');
+
+function setSkyProgress(v){
+  document.documentElement.style.setProperty('--sky-progress', String(v));
+}
+function setStatus(msg){ statusEl.textContent = msg; }
+
+// ---------- Location entry points ----------
+document.getElementById('btn-geo').addEventListener('click', () => {
+  if(!navigator.geolocation){ setStatus('Geolocation isn\'t available — try entering a place instead.'); return; }
+  setStatus('Finding you...');
+  navigator.geolocation.getCurrentPosition(
+    pos => startChorus(pos.coords.latitude, pos.coords.longitude),
+    () => setStatus('Couldn\'t get your location — try entering a place instead.')
+  );
+});
+
+document.getElementById('btn-place').addEventListener('click', async () => {
+  const q = document.getElementById('input-place').value.trim();
+  if(!q){ setStatus('Type a city, region, or postal code first.'); return; }
+  setStatus('Locating "' + q + '"...');
+  try{
+    const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q));
+    const data = await res.json();
+    if(!data.length){ setStatus('Couldn\'t find that place — try a different spelling.'); return; }
+    startChorus(parseFloat(data[0].lat), parseFloat(data[0].lon));
+  }catch(e){
+    setStatus('Location lookup failed. Check your connection and try again.');
+  }
+});
+
+document.getElementById('btn-replay').addEventListener('click', () => playChorus(currentSpecies));
+document.getElementById('btn-shuffle').addEventListener('click', () => startChorus(currentCoords.lat, currentCoords.lng));
+document.getElementById('btn-reset').addEventListener('click', () => {
+  stopAll();
+  stageLocationEl.classList.remove('hidden');
+  controlsEl.classList.add('hidden');
+  chorusEl.style.display = 'none';
+  chorusEl.innerHTML = '';
+  setSkyProgress(0);
+  setStatus('');
+});
+
+// ---------- Core flow ----------
+async function startChorus(lat, lng){
+  const ebirdKey = keyEbird.value.trim();
+  const xcKey = keyXC.value.trim();
+  if(!ebirdKey || !xcKey){
+    setStatus('Add both API keys below first — they\'re free and take a minute.');
+    return;
+  }
+
+  currentCoords = { lat, lng };
+  stopAll();
+  chorusEl.innerHTML = '';
+  chorusEl.style.display = 'flex';
+  controlsEl.classList.add('hidden');
+  setSkyProgress(0);
+  setStatus('Listening for what\'s nearby...');
+
+  try{
+    const species = await fetchNearbySpecies(lat, lng, ebirdKey);
+    if(species.length < 5){
+      setStatus('Not many recent sightings nearby — try a different or larger area.');
+      return;
+    }
+    const picked = pickFive(species);
+    setStatus('Finding their songs...');
+    const withAudio = await attachRecordings(picked, xcKey);
+    const usable = withAudio.filter(b => b.audioUrl);
+    if(usable.length < 3){
+      setStatus('Couldn\'t find enough recordings for this area — try again.');
+      return;
+    }
+    currentSpecies = usable;
+    stageLocationEl.classList.add('hidden');
+    renderCards(usable);
+    setStatus('');
+    controlsEl.classList.remove('hidden');
+    await playChorus(usable);
+  }catch(err){
+    console.error(err);
+    setStatus('Something went wrong reaching eBird or Xeno-canto — check your keys and connection.');
+  }
+}
+
+async function fetchNearbySpecies(lat, lng, ebirdKey){
+  const url = `https://api.ebird.org/v2/data/obs/geo/recent?lat=${lat}&lng=${lng}&dist=25&back=14`;
+  const res = await fetch(url, { headers: { 'X-eBirdApiToken': ebirdKey } });
+  if(!res.ok) throw new Error('eBird request failed: ' + res.status);
+  const data = await res.json();
+  // de-dupe by species code, keep most recent obs per species
+  const bySpecies = {};
+  data.forEach(obs => {
+    if(!bySpecies[obs.speciesCode] || obs.obsDt > bySpecies[obs.speciesCode].obsDt){
+      bySpecies[obs.speciesCode] = obs;
+    }
+  });
+  return Object.values(bySpecies).map(o => ({
+    comName: o.comName,
+    sciName: o.sciName,
+    speciesCode: o.speciesCode,
+    obsDt: o.obsDt
+  }));
+}
+
+function pickFive(species){
+  // favor more recently-reported birds without making it fully deterministic
+  const sorted = [...species].sort((a,b) => new Date(b.obsDt) - new Date(a.obsDt));
+  const pool = sorted.slice(0, Math.max(15, Math.min(sorted.length, 40)));
+  const shuffled = pool.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 5);
+}
+
+async function attachRecordings(species, xcKey){
+  const results = [];
+  for(const bird of species){
+    try{
+      const q = encodeURIComponent(`sp:"${bird.sciName}" q:A,B`);
+      const url = `https://xeno-canto.org/api/3/recordings?query=${q}&key=${xcKey}&per_page=5`;
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('xc ' + res.status);
+      const data = await res.json();
+      const rec = (data.recordings || [])[0];
+      results.push({ ...bird, audioUrl: rec ? rec.file : null });
+    }catch(e){
+      results.push({ ...bird, audioUrl: null });
+    }
+  }
+  return results;
+}
+
+// ---------- Rendering ----------
+function renderCards(birds){
+  chorusEl.innerHTML = '';
+  birds.forEach(bird => {
+    const card = document.createElement('div');
+    card.className = 'bird-card';
+    card.id = 'card-' + bird.speciesCode;
+    card.innerHTML = `
+      <span class="pulse"></span>
+      <span>
+        <span class="bird-name">${bird.comName}</span>
+        <span class="bird-sci">${bird.sciName}</span>
+      </span>
+    `;
+    chorusEl.appendChild(card);
+  });
+}
+
+// ---------- Audio ----------
+function stopAll(){
+  activeSources.forEach(s => { try{ s.stop(); }catch(e){} });
+  activeSources = [];
+  if(audioCtx){ audioCtx.close().catch(()=>{}); audioCtx = null; }
+  document.querySelectorAll('.bird-card').forEach(c => c.classList.remove('active'));
+}
+
+async function playChorus(birds){
+  stopAll();
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let loaded = 0;
+
+  const buffers = await Promise.all(birds.map(async bird => {
+    try{
+      const res = await fetch(bird.audioUrl);
+      const arr = await res.arrayBuffer();
+      const buf = await audioCtx.decodeAudioData(arr);
+      loaded++;
+      return buf;
+    }catch(e){
+      return null;
+    }
+  }));
+
+  birds.forEach((bird, i) => {
+    const buf = buffers[i];
+    if(!buf) return;
+    const delay = i * (1.2 + Math.random()*1.8);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buf;
+    source.loop = true;
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.7 / Math.sqrt(birds.length);
+    source.connect(gain).connect(audioCtx.destination);
+    source.start(audioCtx.currentTime + delay);
+    activeSources.push(source);
+
+    setTimeout(() => {
+      const card = document.getElementById('card-' + bird.speciesCode);
+      if(card) card.classList.add('active');
+      const activeCount = document.querySelectorAll('.bird-card.active').length;
+      setSkyProgress(activeCount / birds.length);
+    }, delay * 1000);
+  });
+}
+</script>
+</body>
+</html>
