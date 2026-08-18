@@ -225,6 +225,113 @@
   @media (prefers-reduced-motion: reduce){
     *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
+
+  /* ---------- Focus / ambient mode ---------- */
+  body.focus .tagline,
+  body.focus .chorus,
+  body.focus .keys,
+  body.focus footer,
+  body.focus .controls button:not(#btn-focus){
+    opacity:0;
+    pointer-events:none;
+    height:0;
+    margin:0;
+    overflow:hidden;
+    transition: opacity .6s ease;
+  }
+  body.focus .controls{ margin-top:0; }
+  body.focus h1{ opacity:.8; transition: opacity .6s ease; }
+
+  /* ---------- Postcard ---------- */
+  .postcard{
+    position:fixed; inset:0;
+    background:color-mix(in srgb, var(--ink) 88%, black 12%);
+    display:flex; align-items:center; justify-content:center;
+    padding:6vw;
+    z-index:10;
+  }
+  .postcard-inner{
+    position:relative;
+    width:100%; max-width:420px;
+    background:var(--mist);
+    color:var(--ink);
+    border-radius:4px;
+    padding:2.2rem 1.8rem 1.8rem;
+    text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.4);
+    font-family:'Public Sans', sans-serif;
+  }
+  .postcard-close{
+    position:absolute; top:.7rem; right:.9rem;
+    background:none; border:none; color:var(--ink);
+    font-size:1.4rem; line-height:1; cursor:pointer; padding:.2rem .5rem;
+  }
+  .stamp{
+    position:absolute; top:1.1rem; right:1.1rem;
+    width:52px; height:52px;
+    border:2px dashed color-mix(in srgb, var(--ink) 40%, transparent);
+    border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    color:color-mix(in srgb, var(--ink) 55%, transparent);
+    transform:rotate(6deg);
+  }
+  .postcard-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.7rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:color-mix(in srgb, var(--ink) 55%, transparent);
+    margin:1.6rem 0 .4rem;
+  }
+  .postcard-place{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-style:normal;
+    font-size:1.7rem;
+    margin:0 0 .2rem;
+  }
+  .postcard-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.75rem;
+    color:color-mix(in srgb, var(--ink) 60%, transparent);
+    margin:0;
+  }
+  .postcard-divider{
+    border-top:1px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+    margin:1.3rem 0;
+  }
+  .postcard-birds{
+    list-style:none; padding:0; margin:0 0 1.4rem;
+    display:flex; flex-direction:column; gap:.5rem;
+    text-align:left;
+  }
+  .postcard-birds li{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:.95rem;
+  }
+  .postcard-birds li span{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-style:normal;
+    font-size:.68rem;
+    color:color-mix(in srgb, var(--ink) 55%, transparent);
+  }
+  .postcard-actions button{
+    border-color:color-mix(in srgb, var(--ink) 30%, transparent);
+    color:var(--ink);
+    background:color-mix(in srgb, var(--ink) 6%, transparent);
+  }
+  .postcard-actions button:hover{
+    border-color:var(--ember);
+    background:color-mix(in srgb, var(--ember) 15%, transparent);
+  }
+  .postcard-note{
+    font-size:.72rem;
+    color:color-mix(in srgb, var(--ink) 55%, transparent);
+    margin:.8rem 0 0;
+    min-height:1.2em;
+  }
 </style>
 </head>
 <body>
@@ -264,7 +371,30 @@
   <div class="controls hidden" id="controls">
     <button id="btn-replay">Replay</button>
     <button id="btn-shuffle">New chorus, same place</button>
+    <button id="btn-focus">Ambient mode</button>
+    <button id="btn-postcard">View postcard</button>
     <button id="btn-reset">Change location</button>
+  </div>
+
+  <div class="postcard hidden" id="postcard">
+    <div class="postcard-inner">
+      <button class="postcard-close" id="btn-postcard-close" aria-label="Close postcard">&times;</button>
+      <div class="stamp" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="34" height="34">
+          <path d="M20 8c-4 0-6 3-6 6 0 5 6 10 6 10s6-5 6-10c0-3-2-6-6-6z" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M6 26c4-3 9-4 14-4s10 1 14 4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <p class="postcard-eyebrow">Wish you could hear this</p>
+      <h2 class="postcard-place" id="postcard-place">—</h2>
+      <p class="postcard-meta" id="postcard-meta">—</p>
+      <div class="postcard-divider"></div>
+      <ul class="postcard-birds" id="postcard-birds"></ul>
+      <div class="postcard-actions">
+        <button id="btn-share">Share this chorus</button>
+      </div>
+      <p class="postcard-note" id="postcard-share-note"></p>
+    </div>
   </div>
 
   <footer>Bird sightings via eBird · recordings via Xeno-canto contributors</footer>
@@ -289,6 +419,9 @@ let currentSpecies = [];
 let currentCoords = null;
 let gainNodes = {};
 let mutedBirds = new Set();
+let placeLabel = '';
+const EXCLUDED_SPECIES = new Set(['Turkey Vulture', 'Blue Jay']);
+const FADE_SECONDS = 2.5;
 
 const statusEl = document.getElementById('status');
 const chorusEl = document.getElementById('chorus');
@@ -313,10 +446,26 @@ document.getElementById('btn-geo').addEventListener('click', () => {
   if(!navigator.geolocation){ setStatus('Geolocation isn\'t available — try entering a place instead.'); return; }
   setStatus('Finding you...');
   navigator.geolocation.getCurrentPosition(
-    pos => startChorus(pos.coords.latitude, pos.coords.longitude),
+    async pos => {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      placeLabel = await reverseGeocode(lat, lng);
+      startChorus(lat, lng);
+    },
     () => setStatus('Couldn\'t get your location — try entering a place instead.')
   );
 });
+
+async function reverseGeocode(lat, lng){
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
+    const data = await res.json();
+    const a = data.address || {};
+    const place = a.city || a.town || a.village || a.county || a.state;
+    return place ? (a.state && place !== a.state ? `${place}, ${a.state}` : place) : 'Somewhere near you';
+  }catch(e){
+    return 'Somewhere near you';
+  }
+}
 
 document.getElementById('btn-place').addEventListener('click', async () => {
   const q = document.getElementById('input-place').value.trim();
@@ -326,6 +475,7 @@ document.getElementById('btn-place').addEventListener('click', async () => {
     const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q));
     const data = await res.json();
     if(!data.length){ setStatus('Couldn\'t find that place — try a different spelling.'); return; }
+    placeLabel = q;
     startChorus(parseFloat(data[0].lat), parseFloat(data[0].lon));
   }catch(e){
     setStatus('Location lookup failed. Check your connection and try again.');
@@ -334,6 +484,10 @@ document.getElementById('btn-place').addEventListener('click', async () => {
 
 document.getElementById('btn-replay').addEventListener('click', () => playChorus(currentSpecies));
 document.getElementById('btn-shuffle').addEventListener('click', () => startChorus(currentCoords.lat, currentCoords.lng));
+document.getElementById('btn-focus').addEventListener('click', () => document.body.classList.toggle('focus'));
+document.getElementById('btn-postcard').addEventListener('click', openPostcard);
+document.getElementById('btn-postcard-close').addEventListener('click', () => document.getElementById('postcard').classList.add('hidden'));
+document.getElementById('btn-share').addEventListener('click', shareChorus);
 document.getElementById('btn-reset').addEventListener('click', () => {
   stopAll();
   stageLocationEl.classList.remove('hidden');
@@ -400,12 +554,14 @@ async function fetchNearbySpecies(lat, lng, ebirdKey){
       bySpecies[obs.speciesCode] = obs;
     }
   });
-  return Object.values(bySpecies).map(o => ({
-    comName: o.comName,
-    sciName: o.sciName,
-    speciesCode: o.speciesCode,
-    obsDt: o.obsDt
-  }));
+  return Object.values(bySpecies)
+    .filter(o => !EXCLUDED_SPECIES.has(o.comName))
+    .map(o => ({
+      comName: o.comName,
+      sciName: o.sciName,
+      speciesCode: o.speciesCode,
+      obsDt: o.obsDt
+    }));
 }
 
 function pickFive(species){
@@ -446,7 +602,105 @@ async function attachRecordings(species, xcKey){
   return results;
 }
 
-// ---------- Rendering ----------
+// ---------- Postcard ----------
+function openPostcard(){
+  if(!currentSpecies.length) return;
+  document.getElementById('postcard-place').textContent = placeLabel || 'Somewhere near you';
+  const dateStr = new Date().toLocaleDateString(undefined, { day:'numeric', month:'long', year:'numeric' });
+  const coordStr = currentCoords ? `${currentCoords.lat.toFixed(2)}°, ${currentCoords.lng.toFixed(2)}°` : '';
+  document.getElementById('postcard-meta').textContent = `${dateStr} · ${coordStr}`;
+  const list = document.getElementById('postcard-birds');
+  list.innerHTML = '';
+  currentSpecies.forEach(b => {
+    const li = document.createElement('li');
+    li.innerHTML = `${b.comName}<span>${b.sciName}</span>`;
+    list.appendChild(li);
+  });
+  document.getElementById('postcard-share-note').textContent = '';
+  document.getElementById('postcard').classList.remove('hidden');
+}
+
+function buildShareUrl(){
+  const payload = {
+    birds: currentSpecies.map(b => ({ c: b.comName, s: b.sciName, x: b.speciesCode })),
+    place: placeLabel,
+    lat: currentCoords.lat,
+    lng: currentCoords.lng
+  };
+  const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.searchParams.set('chorus', encoded);
+  return url.toString();
+}
+
+async function shareChorus(){
+  const url = buildShareUrl();
+  const note = document.getElementById('postcard-share-note');
+  const shareData = {
+    title: 'First Light',
+    text: `The dawn chorus from ${placeLabel || 'my spot'} — five birds, one morning.`,
+    url
+  };
+  if(navigator.share){
+    try{ await navigator.share(shareData); }catch(e){ /* user cancelled, ignore */ }
+  }else{
+    try{
+      await navigator.clipboard.writeText(url);
+      note.textContent = 'Link copied to your clipboard.';
+    }catch(e){
+      note.textContent = url;
+    }
+  }
+}
+
+// ---------- Load a shared chorus, if the URL has one ----------
+(function loadSharedChorus(){
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get('chorus');
+  if(!encoded) return;
+  try{
+    const payload = JSON.parse(decodeURIComponent(atob(encoded)));
+    placeLabel = payload.place || 'Somewhere near you';
+    currentCoords = { lat: payload.lat, lng: payload.lng };
+    const sharedBirds = payload.birds.map(b => ({ comName: b.c, sciName: b.s, speciesCode: b.x, obsDt: '' }));
+    window.addEventListener('DOMContentLoaded', () => startSharedChorus(sharedBirds));
+    if(document.readyState !== 'loading') startSharedChorus(sharedBirds);
+  }catch(e){
+    console.error('Could not parse shared chorus link', e);
+  }
+})();
+
+async function startSharedChorus(birds){
+  if(!keyXC.value.trim()){
+    setStatus('Add a Xeno-canto key below to hear this shared chorus.');
+    return;
+  }
+  stopAll();
+  mutedBirds = new Set();
+  chorusEl.innerHTML = '';
+  chorusEl.style.display = 'flex';
+  controlsEl.classList.add('hidden');
+  setSkyProgress(0);
+  setStatus(`Loading the chorus from ${placeLabel}...`);
+  try{
+    const withAudio = await attachRecordings(birds, keyXC.value.trim());
+    const usable = withAudio.filter(b => b.audioUrl);
+    if(usable.length < 3){
+      setStatus(withAudio._firstIssue || 'Couldn\'t load this shared chorus — try again.');
+      return;
+    }
+    currentSpecies = usable;
+    stageLocationEl.classList.add('hidden');
+    renderCards(usable);
+    setStatus('');
+    controlsEl.classList.remove('hidden');
+    await playChorus(usable);
+  }catch(err){
+    console.error(err);
+    setStatus('Error: ' + (err && err.message ? err.message : String(err)));
+  }
+}
 function renderCards(birds){
   chorusEl.innerHTML = '';
   birds.forEach(bird => {
@@ -484,7 +738,10 @@ function toggleMute(code){
   }
   const g = gainNodes[code];
   if(g && audioCtx){
-    g.gain.linearRampToValueAtTime(mutedBirds.has(code) ? 0 : g._baseValue, audioCtx.currentTime + 0.15);
+    const now = audioCtx.currentTime;
+    g.gain.cancelScheduledValues(now);
+    g.gain.setValueAtTime(g.gain.value, now);
+    g.gain.linearRampToValueAtTime(mutedBirds.has(code) ? 0 : g._baseValue, now + 0.4);
   }
 }
 
@@ -522,7 +779,10 @@ async function playChorus(birds){
     const gain = audioCtx.createGain();
     const baseValue = 0.7 / Math.sqrt(birds.length);
     gain._baseValue = baseValue;
-    gain.gain.value = mutedBirds.has(bird.speciesCode) ? 0 : baseValue;
+    const startAt = audioCtx.currentTime + delay;
+    const target = mutedBirds.has(bird.speciesCode) ? 0 : baseValue;
+    gain.gain.setValueAtTime(0, startAt);
+    gain.gain.linearRampToValueAtTime(target, startAt + FADE_SECONDS);
     gainNodes[bird.speciesCode] = gain;
     source.connect(gain).connect(audioCtx.destination);
     source.start(audioCtx.currentTime + delay);
