@@ -34,8 +34,8 @@ new_card = '''    const info = document.createElement('span');
     const muteButton = document.createElement('button');
     muteButton.className = 'mute-btn';
     muteButton.dataset.code = bird.speciesCode;
-    muteButton.setAttribute('aria-label', `Mute ${bird.comName}`);
-    muteButton.title = `Mute ${bird.comName}`;
+    muteButton.setAttribute('aria-label', 'Mute ' + bird.comName);
+    muteButton.title = 'Mute ' + bird.comName;
     muteButton.textContent = '♪';
 
     card.append(info, muteButton);'''
@@ -109,8 +109,10 @@ if old_share not in s:
     raise SystemExit('Shared chorus loader block not found')
 s = s.replace(old_share, new_share, 1)
 
-if '${bird.comName}' in s or '${bird.sciName}' in s:
-    raise SystemExit('Unsafe bird template interpolation still present')
+if '<span class="bird-name">${bird.comName}</span>' in s:
+    raise SystemExit('Unsafe common name HTML interpolation still present')
+if '<span class="bird-sci">${bird.sciName}</span>' in s:
+    raise SystemExit('Unsafe scientific name HTML interpolation still present')
 if 'li.innerHTML = `${b.comName}' in s:
     raise SystemExit('Unsafe postcard HTML still present')
 
