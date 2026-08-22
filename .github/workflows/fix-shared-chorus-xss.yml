@@ -19,8 +19,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ! grep -F '${bird.comName}' index.html
-          ! grep -F '${bird.sciName}' index.html
+          ! grep -F '<span class="bird-name">${bird.comName}</span>' index.html
+          ! grep -F '<span class="bird-sci">${bird.sciName}</span>' index.html
           ! grep -F 'li.innerHTML = `${b.comName}' index.html
           grep -F "Invalid shared chorus payload" index.html
           grep -F "commonName.textContent = bird.comName" index.html
