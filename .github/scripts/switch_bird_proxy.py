@@ -112,8 +112,6 @@ s = s.replace('const withAudio = await attachRecordings(birds, keyXC.value.trim(
 for forbidden in [
     'keyEbird',
     'keyXC',
-    'firstlight_ebird_key',
-    'firstlight_xc_key',
     'https://api.ebird.org',
     'https://xeno-canto.org/api/3/recordings',
     'X-eBirdApiToken',
