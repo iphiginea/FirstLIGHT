@@ -1,0 +1,37 @@
+name: Fix First Light shared chorus XSS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch shared chorus rendering
+        run: python scripts/fix-shared-chorus-xss.py
+
+      - name: Verify security fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -F '${bird.comName}' index.html
+          ! grep -F '${bird.sciName}' index.html
+          ! grep -F 'li.innerHTML = `${b.comName}' index.html
+          grep -F "Invalid shared chorus payload" index.html
+          grep -F "commonName.textContent = bird.comName" index.html
+          grep -F "scientificName.textContent = b.sciName" index.html
+          git diff --check
+
+      - name: Commit security fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Harden First Light shared chorus links"
+          git push
