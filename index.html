@@ -639,8 +639,8 @@ function buildShareUrl(){
   const payload = {
     birds: currentSpecies.map(b => ({ c: b.comName, s: b.sciName, x: b.speciesCode })),
     place: placeLabel,
-    lat: currentCoords.lat,
-    lng: currentCoords.lng
+    lat: Number(currentCoords.lat.toFixed(1)),
+    lng: Number(currentCoords.lng.toFixed(1))
   };
   const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
   const url = new URL(window.location.href);
