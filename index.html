@@ -431,12 +431,12 @@
     background:color-mix(in srgb, var(--gold) 10%, var(--ink));
   }
   .stamp{
-    top:2rem;
-    right:2.2rem;
+    top:1.55rem;
+    right:1.55rem;
     width:54px;
     height:66px;
     overflow:visible;
-    border:2px dotted color-mix(in srgb, var(--ink) 43%, transparent);
+    border:none;
     transform:rotate(3deg);
     box-shadow:none;
     z-index:3;
@@ -609,8 +609,8 @@
       right:0;
     }
     .stamp{
-      top:1.25rem;
-      right:1.3rem;
+      top:.95rem;
+      right:1rem;
       width:48px;
       height:59px;
     }
@@ -868,7 +868,6 @@ async function fetchNearbySpecies(lat, lng){
   const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
   if(!res.ok) throw new Error('eBird request failed: ' + res.status);
   const data = await res.json();
-  // de-dupe by species code, keep most recent obs per species
   const bySpecies = {};
   data.forEach(obs => {
     if(!bySpecies[obs.speciesCode] || obs.obsDt > bySpecies[obs.speciesCode].obsDt){
@@ -886,7 +885,6 @@ async function fetchNearbySpecies(lat, lng){
 }
 
 function pickFive(species){
-  // favor more recently-reported birds without making it fully deterministic
   const sorted = [...species].sort((a,b) => new Date(b.obsDt) - new Date(a.obsDt));
   const pool = sorted.slice(0, Math.max(15, Math.min(sorted.length, 40)));
   const shuffled = pool.sort(() => Math.random() - 0.5);
@@ -963,7 +961,7 @@ async function shareChorus(){
     url
   };
   if(navigator.share){
-    try{ await navigator.share(shareData); }catch(e){ /* user cancelled, ignore */ }
+    try{ await navigator.share(shareData); }catch(e){ }
   }else{
     try{
       await navigator.clipboard.writeText(url);
@@ -974,7 +972,6 @@ async function shareChorus(){
   }
 }
 
-// ---------- Load a shared chorus, if the URL has one ----------
 (function loadSharedChorus(){
   const params = new URLSearchParams(window.location.search);
   const encoded = params.get('chorus');
@@ -1061,7 +1058,6 @@ function toggleMute(code){
   }
 }
 
-// ---------- Audio ----------
 function stopAll(){
   activeSources.forEach(s => { try{ s.stop(); }catch(e){} });
   activeSources = [];
