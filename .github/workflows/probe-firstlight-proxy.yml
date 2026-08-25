@@ -21,7 +21,7 @@ jobs:
           )
           for URL in "${URLS[@]}"; do
             echo "=== $URL ==="
-            curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$URL" -o /tmp/body 2>/tmp/err
+            curl -sS -H 'Origin: https://iphiginea.github.io' -w '\nHTTP_STATUS=%{http_code}\n' "$URL" -o /tmp/body 2>/tmp/err
             CODE=$?
             echo "curl_exit=$CODE"
             head -c 700 /tmp/body || true
