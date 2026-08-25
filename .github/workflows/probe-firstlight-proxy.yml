@@ -1,0 +1,25 @@
+name: Probe First Light bird proxy
+
+on:
+  push:
+    paths:
+      - '.github/workflows/probe-firstlight-proxy.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe candidate notable routes
+        shell: bash
+        run: |
+          set +e
+          BASE='https://firstlight-bird-proxy.kiah-harpool.workers.dev'
+          for PATHPART in 'ebird/notable' 'ebird/recent/notable' 'ebird/recent?notable=true'; do
+            echo "=== $PATHPART ==="
+            curl -sS -D - "$BASE/$PATHPART&lat=41.8781&lng=-87.6298" -o /tmp/body 2>/tmp/err
+            CODE=$?
+            echo "curl_exit=$CODE"
+            head -c 500 /tmp/body || true
+            echo
+            cat /tmp/err || true
+          done
