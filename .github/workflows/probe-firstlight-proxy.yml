@@ -14,12 +14,17 @@ jobs:
         run: |
           set +e
           BASE='https://firstlight-bird-proxy.kiah-harpool.workers.dev'
-          for PATHPART in 'ebird/notable' 'ebird/recent/notable' 'ebird/recent?notable=true'; do
-            echo "=== $PATHPART ==="
-            curl -sS -D - "$BASE/$PATHPART&lat=41.8781&lng=-87.6298" -o /tmp/body 2>/tmp/err
+          URLS=(
+            "$BASE/ebird/notable?lat=41.8781&lng=-87.6298"
+            "$BASE/ebird/recent/notable?lat=41.8781&lng=-87.6298"
+            "$BASE/ebird/recent?notable=true&lat=41.8781&lng=-87.6298"
+          )
+          for URL in "${URLS[@]}"; do
+            echo "=== $URL ==="
+            curl -sS -w '\nHTTP_STATUS=%{http_code}\n' "$URL" -o /tmp/body 2>/tmp/err
             CODE=$?
             echo "curl_exit=$CODE"
-            head -c 500 /tmp/body || true
+            head -c 700 /tmp/body || true
             echo
             cat /tmp/err || true
           done
