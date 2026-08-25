@@ -1,0 +1,39 @@
+name: Apply First Light weighted rarity
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-weighted-rarity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply weighted local chorus and rare collection
+        run: python scripts/add-weighted-rarity.py
+
+      - name: Verify patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F "const RARE_VISITOR_CHANCE = 0.08" index.html
+          grep -F "Rare finds · 0" index.html
+          grep -F "function normalWeight" index.html
+          grep -F "firstlight_rare_collection" index.html
+          grep -F "rare visitor · collected" index.html
+          git diff --check
+
+      - name: Commit First Light rarity update
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Weight First Light chorus by local likelihood and add rare finds"
+          git push
